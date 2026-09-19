@@ -88,7 +88,20 @@
       /* the step before the puzzle: modules still on the sheet, track empty, no rating yet */
       if (r.empty === 5 && r.level === undefined) { lastKey = null; stable = 0; return (view = { state: "waiting", reason: "place", slots: r.slots }); }
       if (r.empty > 0) { lastKey = null; stable = 0; return (view = { state: "waiting", reason: "moving", slots: r.slots }); }
-      if (r.level === undefined) { lastKey = null; stable = 0; return (view = { state: "waiting", reason: "no-rating", slots: r.slots }); }
+      var asked = false;
+      if (r.level === undefined) {
+        /* rating unreadable: if the modules can still be followed, ask the user for the rating
+           once per order (and reuse what they said when that order is seen again) */
+        if (!sess.refs && Reader.distinct(r.fps)) startPuzzle(r.fps);
+        var mm = sess.refs ? Reader.matchSlots(r.fps, sess.refs) : null, known;
+        if (!mm) { lastKey = null; stable = 0; return (view = { state: "waiting", reason: "no-rating", slots: r.slots }); }
+        sess.history.forEach(function (h) { if (h[0].join("") === mm.arr.join("")) known = h[1]; });
+        if (known === undefined) {
+          lastKey = null; stable = 0;
+          return (view = { state: "ask", reason: "no-rating", arr: mm.arr, slots: r.slots, icons: sess.data.icons, history: sess.history, needIcons: !!sess.needIcons });
+        }
+        r = Object.assign({}, r, { level: known, levelHow: "you" }); asked = true;
+      }
       if (!sess.refs) {
         if (!Reader.distinct(r.fps)) return (view = { state: "waiting", reason: "lookalike", slots: r.slots });
         startPuzzle(r.fps);
@@ -124,6 +137,14 @@
       return (view = makeView(hit[0], level, { slots: view.slots, levelHow: "you", manual: view.manual, contradiction: cur.status === "contradiction" }));
     }
 
+    /* the user tells us the rating for the order on screen (used when it can't be read) */
+    function supply(level) {
+      if (!cur || view.state !== "ask" || !view.arr) return null;
+      var arr = view.arr, slots = view.slots;
+      record(arr, level);
+      return (view = makeView(arr, level, { slots: slots, levelHow: "you", contradiction: cur.status === "contradiction" }));
+    }
+
     function setIcons(list) { if (cur) { cur.data.icons = list; cur.needIcons = false; save(); } }
 
     function reset() {
@@ -146,7 +167,7 @@
       return makeView(last[0], last[1], { manual: true, contradiction: cur.status === "contradiction" });
     }
 
-    return { feed: feed, correct: correct, setIcons: setIcons, reset: reset, manual: manual, manualState: manualState, view: function () { return view; } };
+    return { feed: feed, correct: correct, supply: supply, setIcons: setIcons, reset: reset, manual: manual, manualState: manualState, view: function () { return view; } };
   }
 
   return { create: create };

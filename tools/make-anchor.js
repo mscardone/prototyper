@@ -22,7 +22,7 @@ var GEO = {
   PARCH_W: 352, PARCH_DX: 10, PARCH_DY: 5,      /* the parchment-coloured area: width, and where L0 sits inside it */
   TEXT: { dx: -65, dy: 125, w: 265, h: 60 },
   TITLE: { dx: 86, dy: -340, w: 275, h: 82 },
-  MATCH_MIN: 0.88, DISTINCT_MAX: 0.8, EMPTY_CONTRAST: 16
+  MATCH_MIN: 0.88, DISTINCT_MAX: 0.8, EMPTY_EDGE: 5
 };
 var ANCHOR_BOXES = [{ dx: 0, dy: 0, w: 20, h: 11 }, { dx: 340, dy: 0, w: 20, h: 11 }];
 
@@ -58,7 +58,7 @@ console.log("strip-shaped parchment candidates: " + cands.length + "  first: " +
 var loc = R.locate(ref);
 console.log("scale-free locate: " + (loc ? "x0 " + loc.x0 + " y0 " + loc.y0 + " scale " + loc.s.toFixed(4) + " score " + loc.score.toFixed(1) : "FAILED") + "   (expected " + L0 + ", scale 1)");
 var rd = R.readBuffer(ref, L0[0], L0[1], 1, []);
-console.log("slot contrast: " + rd.fps.map(function (f) { return f.contrast.toFixed(1); }).join(" "));
+console.log("slot edge: " + rd.fps.map(function (f) { return f.edge.toFixed(1); }).join(" "));
 var mx = -1; for (var a = 0; a < 5; a++) for (var b = a + 1; b < 5; b++) mx = Math.max(mx, R.similarity(rd.fps[a], rd.fps[b]));
 console.log("different modules, max similarity: " + mx.toFixed(3));
 console.log("rating: " + (rd.word ? JSON.stringify({ level: rd.level, ratio: +rd.word.ratio.toFixed(3), gap: rd.word.gap, hue: Math.round(rd.word.hue), pg: +rd.word.pg.toFixed(2), h: rd.word.h }) : "NOT READ"));

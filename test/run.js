@@ -118,6 +118,22 @@ if (!A.error) [0.9, 1.25, 1.5, 2].forEach(function (f) {
   ok("interface scale x" + f + ": a swap of slots 2 and 5 is tracked, same blueprint hash", m2 && m2.arr.join("") === "04231" && R2.title === R1.title && R2.origin.via === "tracking", R2.error || JSON.stringify(m2));
 });
 ok("without the deep flag an enlarged window is not searched for (cheap idle reads)", Reader.readRef(toRef(resize(cap, 1.5)), [], null, false).error === "no-window");
+(function () { /* "Excellent" is drawn in plain white, not in a colour (real capture; a faint light-bulb module too) */
+  var ex = loadPng(path.join(__dirname, "capture-excellent.png")), E = Reader.readRef(toRef(ex), [], null, false);
+  ok("white rating text: Excellent read (width ratio " + (E.word ? E.word.ratio.toFixed(3) : "-") + ", no hue)", !E.error && E.level === 1 && E.word.hue === -1, E.error || JSON.stringify(E.word && { r: E.word.ratio, hue: E.word.hue }));
+  ok("faint module (light bulb) still counts as a module: no empty slots, five distinct", !E.error && E.empty === 0 && Reader.distinct(E.fps), E.empty + " empty; detail " + (E.fps || []).map(function (f) { return f.edge.toFixed(1); }).join(" "));
+  var E2 = Reader.readRef(toRef(resize(ex, 1.5)), [], null, true);
+  ok("white rating text at interface scale x1.5: Excellent", !E2.error && E2.level === 1 && E2.empty === 0, E2.error || (E2.level + " / empty " + E2.empty));
+})();
+(function () { /* "Poor!" is red, has an exclamation mark, and is as short as "Good" (real capture; a faint cylinder outline too) */
+  var po = loadPng(path.join(__dirname, "capture-poor.png")), Pq = Reader.readRef(toRef(po), [], null, false);
+  ok("'Poor!' read as Poor, not Good (ratio " + (Pq.word ? Pq.word.ratio.toFixed(3) : "-") + ", red, first-letter corner ink " + (Pq.word ? Pq.word.pg.toFixed(2) : "-") + ")", !Pq.error && Pq.level === 5 && Pq.word.hue < 15, Pq.error || JSON.stringify(Pq.level));
+  ok("faint outline module (cylinder) is not mistaken for an empty slot", !Pq.error && Pq.empty === 0 && Reader.distinct(Pq.fps), Pq.empty + " empty; detail " + (Pq.fps || []).map(function (f) { return f.edge.toFixed(1); }).join(" "));
+  var P2 = Reader.readRef(toRef(resize(po, 2)), [], null, true);
+  ok("the same at interface scale x2", !P2.error && P2.level === 5 && P2.empty === 0, P2.error || (P2.level + " / empty " + P2.empty + " / detail " + (P2.fps || []).map(function (f) { return f.edge.toFixed(1); }).join(" ")));
+  var pre2 = Reader.readRef(toRef(resize(loadPng(path.join(__dirname, "capture-place-modules.png")), 2)), [], null, true);
+  ok("empty track at interface scale x2: still five empty slots", !pre2.error && pre2.empty === 5, pre2.error || (pre2.empty + " / detail " + (pre2.fps || []).map(function (f) { return f.edge.toFixed(1); }).join(" ")));
+})();
 (function () { /* the step before the puzzle: empty track, modules still on the sheet (real capture, cropped to the window) */
   var pre = loadPng(path.join(__dirname, "capture-place-modules.png")), R0 = Reader.readRef(toRef(pre), [], null, true);
   ok("empty track: window still found, all five slots empty, no rating", !R0.error && R0.empty === 5 && R0.level === undefined, R0.error || (R0.empty + " empty, level " + R0.level));
@@ -150,6 +166,14 @@ console.log("tracker");
   T2.reset(); T2.feed(frame(A)); T2.feed(frame(A)); v = T2.feed(frame(A));
   ok("reset forgets it", v.history.length === 1);
   v = T2.feed(frame(A, { title: "other" })); ok("another blueprint = another session", v.state === "waiting");
+  /* unreadable rating: ask once, remember the answer for that order */
+  var T3 = app.Tracker.create({ get: function () { return null; }, set: function () {} });
+  v = T3.feed(frame(A, { level: undefined }));
+  ok("rating unreadable but modules fine: the app asks for the rating", v.state === "ask" && v.arr.join("") === "01234", v.state);
+  v = T3.supply(1); ok("answering carries on with advice", v && v.state === "tracking" && v.level === 1 && v.rec.swap.length === 2);
+  T3.feed(frame(A, { level: undefined })); T3.feed(frame(A, { level: undefined })); v = T3.feed(frame(A, { level: undefined }));
+  ok("the same order is not asked about twice", v.state === "tracking" && v.level === 1 && v.history.length === 1, v.state);
+  v = T3.feed(frame(B, { level: undefined })); ok("a new order with an unreadable rating is asked about again", v.state === "ask" && v.arr.join("") === "31204", v.state + " " + (v.arr || []).join(""));
 })();
 
 /* ---------------- rating words ---------------- */

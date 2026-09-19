@@ -5,7 +5,7 @@
       ten slot-frame lines are then fitted for exact position AND scale
    2. fingerprint the artwork in each of the five slots (so modules can be
       followed as they move - no icon library needed)
-   3. read "Optimisation: <rating>": the coloured text is isolated by saturation
+   3. read "Optimisation: <rating>": the bright text is isolated from the dark panel
       and the rating word is classified by scale-free features (width relative to
       "Optimisation:", one word or two, colour, first letter) - no font needed
    4. hash the blueprint's title/description so progress is kept per blueprint
@@ -27,12 +27,12 @@
     })).then(function (list) { anchors = list; return true; });
   }
 
-  /* ---------- coloured-text mask ---------- */
+  /* ---------- text mask: bright pixels on the dark panel ----------
+     The rating line is coloured for some ratings (green, yellow, orange) and plain
+     white for others (Excellent), so brightness is the only thing to go by. */
   function isSat(d, p) {
     var r = d[p], g = d[p + 1], b = d[p + 2];
-    var mx = r > g ? (r > b ? r : b) : (g > b ? g : b);
-    var mn = r < g ? (r < b ? r : b) : (g < b ? g : b);
-    return mx >= 150 && mx - mn >= 110;
+    return (r > g ? (r > b ? r : b) : (g > b ? g : b)) >= 150;
   }
   function satMask(buf, x, y, w, h) {
     var m = new Uint8Array(w * h);
@@ -57,29 +57,37 @@
      split into tokens at word-sized gaps, and the word is described by
        ratio = its width / the width of "Optimisation:"   (font-size independent)
        gap   = is it two words?                            (only "Very Good" is)
-       hue   = the text colour                             (the game colours ratings)
+       hue   = the text colour, -1 for white                 (the game colours some ratings)
        pg    = ink in the lower right of the first letter  (G has it, P does not)  */
   function readRating(buf, rx, ry, rw, rh, learned) {
     var mask = satMask(buf, rx, ry, rw, rh), w = mask.w, h = mask.h, m = mask.m, x, y, n;
-    var top = -1, bot = -1;
-    for (y = 0; y < h && top < 0; y++) { n = 0; for (x = 0; x < w; x++) n += m[y * w + x]; if (n >= 3) top = y; }
-    if (top < 0) return null;
     function rowInk(yy) { if (yy >= h) return 0; var c = 0; for (var i = 0; i < w; i++) c += m[yy * w + i]; return c; }
-    bot = top;
-    while (bot + 1 < h && (rowInk(bot + 1) > 0 || rowInk(bot + 2) > 0)) bot++;
-    while (bot > top && rowInk(bot) === 0) bot--;
-    var H = bot - top + 1;
-    if (H < 7 || H > 70) return null;
-    var cols = [];
-    for (x = 0; x < w; x++) { n = 0; for (y = top; y <= bot; y++) n += m[y * w + x]; cols.push(n); }
-    var minGap = Math.max(3, Math.round(0.25 * H)), tokens = [], start = -1, gap = 0;
-    for (x = 0; x <= w; x++) {
-      if (x < w && cols[x]) { if (start < 0) start = x; gap = 0; }
-      else if (start >= 0) { gap++; if (gap >= minGap || x === w) { tokens.push([start, x - gap]); start = -1; } }
+    /* go through the text lines top to bottom; the rating line is the first one that starts with
+       something shaped like "Optimisation:" (a token 5.2-8.2 line-heights wide) followed by a word */
+    var top, bot, H, cols, tokens, pre, preW, from = 0, found = false;
+    while (!found) {
+      top = -1;
+      for (y = from; y < h && top < 0; y++) if (rowInk(y) >= 3) top = y;
+      if (top < 0) return null;
+      bot = top;
+      while (bot + 1 < h && (rowInk(bot + 1) > 0 || rowInk(bot + 2) > 0)) bot++;
+      while (bot > top && rowInk(bot) === 0) bot--;
+      from = bot + 1;
+      H = bot - top + 1;
+      if (H < 7 || H > 70) continue;
+      cols = [];
+      for (x = 0; x < w; x++) { n = 0; for (y = top; y <= bot; y++) n += m[y * w + x]; cols.push(n); }
+      var minGap = Math.max(3, Math.round(0.25 * H)), start = -1, gap = 0;
+      tokens = [];
+      for (x = 0; x <= w; x++) {
+        if (x < w && cols[x]) { if (start < 0) start = x; gap = 0; }
+        else if (start >= 0) { gap++; if (gap >= minGap || x === w) { tokens.push([start, x - gap]); start = -1; } }
+      }
+      if (tokens.length < 2) continue;
+      pre = tokens[0]; preW = pre[1] - pre[0] + 1;
+      if (preW / H < 5.2 || preW / H > 8.2) continue;
+      found = true;
     }
-    if (tokens.length < 2) return null;
-    var pre = tokens[0], preW = pre[1] - pre[0] + 1;
-    if (preW / H < 5.2 || preW / H > 8.2) return null;          /* not "Optimisation:" */
     var first = tokens[1][0], last = tokens[tokens.length - 1][1], wordW = last - first + 1;
     /* colour of the word */
     var sr = 0, sg = 0, sb = 0, cnt = 0;
@@ -87,15 +95,18 @@
       var p = ((ry + y) * buf.width + rx + x) * 4; sr += buf.data[p]; sg += buf.data[p + 1]; sb += buf.data[p + 2]; cnt++;
     }
     sr /= cnt; sg /= cnt; sb /= cnt;
-    var mx = Math.max(sr, sg, sb), mn = Math.min(sr, sg, sb), hue = 0;
-    if (mx > mn) {
+    var mx = Math.max(sr, sg, sb), mn = Math.min(sr, sg, sb), hue = -1;   /* -1 = white/grey text */
+    if (mx - mn >= 40) {
       if (mx === sr) hue = 60 * (((sg - sb) / (mx - mn)) % 6); else if (mx === sg) hue = 60 * ((sb - sr) / (mx - mn) + 2); else hue = 60 * ((sr - sg) / (mx - mn) + 4);
       if (hue < 0) hue += 360;
     }
-    /* first letter: ink in its lower-right part (between 50% and 80% of the capital height) */
+    /* first letter: ink in the bottom-right corner of the letter's own box (lowest 35%, right half).
+       G curls round there; P has only its stem on the left, so it has none. */
     var gEnd = first; while (gEnd + 1 <= last && cols[gEnd + 1]) gEnd++;
-    var capH = Math.round(H * 0.74), gx0 = Math.round(first + (gEnd - first + 1) * 0.55), ink = 0, area = 0;
-    for (y = top + Math.round(capH * 0.5); y <= top + Math.round(capH * 0.8); y++) for (x = gx0; x <= gEnd; x++) { area++; ink += m[y * w + x]; }
+    var gTop = -1, gBot = -1;
+    for (y = top; y <= bot; y++) for (x = first; x <= gEnd; x++) if (m[y * w + x]) { if (gTop < 0) gTop = y; gBot = y; break; }
+    var gy0 = Math.round(gTop + (gBot - gTop + 1) * 0.65), gx0 = Math.round(first + (gEnd - first + 1) * 0.5), ink = 0, area = 0;
+    for (y = gy0; y <= gBot; y++) for (x = gx0; x <= gEnd; x++) { area++; ink += m[y * w + x]; }
     var word = {
       x: rx + first, y: ry + top, w: wordW, h: H, ratio: wordW / preW, gap: tokens.length > 2, hue: hue, pg: area ? ink / area : 0,
       rows: maskToRows(mask, first, top, wordW, H)
@@ -104,7 +115,7 @@
     return { word: word, level: c ? c.level : undefined, how: c ? c.how : undefined, at: { x: rx + pre[0], y: ry + top } };
   }
 
-  function hueDiff(a, b) { var d = Math.abs(a - b) % 360; return d > 180 ? 360 - d : d; }
+  function hueDiff(a, b) { if (a < 0 || b < 0) return a < 0 && b < 0 ? 0 : 999; var d = Math.abs(a - b) % 360; return d > 180 ? 360 - d : d; }
 
   /* -> {level, how: "learned"|"shape"} or null.  learned = [{level, ratio, gap, hue}] from the user's corrections */
   function classifyRating(word, learned) {
@@ -117,7 +128,10 @@
     if (best) return best;
     var r = word.ratio;
     if (word.gap) return { level: 2, how: "shape" };                          /* Very Good */
-    if (r < 0.43) return { level: word.pg > 0.2 ? 3 : 5, how: "shape" };      /* Good / Poor */
+    if (r < 0.43) {                                                           /* Good / "Poor!" */
+      var red = word.hue >= 0 && (word.hue < 15 || word.hue > 345);           /* Poor! is drawn in red */
+      return { level: red || word.pg < 0.15 ? 5 : 3, how: "shape" };
+    }
     if (r < 0.57) return { level: 0, how: "shape" };                          /* Perfect */
     if (r < 0.70) return { level: 1, how: "shape" };                          /* Excellent */
     if (r < 1.05) return { level: 4, how: "shape" };                          /* Satisfactory */
@@ -235,7 +249,15 @@
     for (i = 0; i < f.length; i++) { f[i] -= mean; ss += f[i] * f[i]; }
     var norm = Math.sqrt(ss) || 1;
     for (i = 0; i < f.length; i++) f[i] /= norm;
-    f.contrast = Math.sqrt(ss / f.length); /* flat parchment = no module in the slot */
+    f.contrast = Math.sqrt(ss / f.length);
+    /* edge = average brightness step between neighbouring pixels inside the box.  Bare parchment
+       is smooth (about 2); every module seen, even a faint outline drawing, is 10 or more. */
+    var st = Math.max(1, Math.round(sc)), side = Math.floor((G.SLOT_SIZE - 2 * G.SLOT_INSET) * sc) - st, ex = Math.round(x0), ey = Math.round(y0), g = 0, c = 0;
+    for (j = 0; j < side; j += st) for (i = 0; i < side; i += st) {
+      var v0 = lumAt(buf, ex + i, ey + j);
+      g += Math.abs(lumAt(buf, ex + i + st, ey + j) - v0) + Math.abs(lumAt(buf, ex + i, ey + j + st) - v0); c++;
+    }
+    f.edge = c ? g / c : 0;
     return f;
   }
   function similarity(a, b) { var s = 0; for (var i = 0; i < a.length; i++) s += a[i] * b[i]; return s; }
@@ -277,7 +299,7 @@
       var bx = x0 + s * G.PITCH * sc, by = y0;
       out.slots.push({ x: Math.round(bx), y: Math.round(by), w: Math.round(G.SLOT_SIZE * sc), h: Math.round(G.SLOT_SIZE * sc) });
       var f = fingerprint(buf, bx, by, sc);
-      if (f.contrast < G.EMPTY_CONTRAST) out.empty++;
+      if (f.edge < G.EMPTY_EDGE) out.empty++;
       out.fps.push(f);
     }
     var R = G.TEXT, rating = readRating(buf, Math.round(x0 + R.dx * sc), Math.round(y0 + R.dy * sc), Math.round(R.w * sc), Math.round(R.h * sc), learned);

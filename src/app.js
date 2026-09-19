@@ -4,7 +4,7 @@
   "use strict";
   var $ = function (id) { return document.getElementById(id); };
   var LEVELS = Solver.LEVELS, LETTERS = ["A", "B", "C", "D", "E"];
-  var VERSION = "1.2.2";
+  var VERSION = "1.3.0";
   var POLL_MS = 300, OVERLAY_GROUP = "prototyper", OVERLAY_MS = 6000;
 
   var store = {
@@ -54,6 +54,9 @@
     } else if (swapped) {
       ins.textContent = "Now click the new rating";
       det.textContent = "You swapped slots " + diffSlots(v.arr, manualArr).join(" and ") + ". Click the rating the game shows for this order.";
+    } else if (v.state === "ask") {
+      ins.textContent = "Which rating does the game show?";
+      det.textContent = "I can see the modules but can't read the rating this time. Click it below and I'll carry on from there.";
     } else if (v.state === "done") {
       ins.className = "done"; ins.textContent = "Perfect — press Invent";
       det.textContent = "Solved after trying " + (v.history ? v.history.length : 1) + " order" + (v.history && v.history.length === 1 ? "" : "s") + ".";
@@ -73,7 +76,7 @@
 
     /* rating buttons: show what was read; click to correct (or, in manual mode, to enter) */
     var rb = $("ratingbtns"); rb.innerHTML = "";
-    var showRating = manual || v.state === "tracking" || v.state === "done";
+    var showRating = manual || v.state === "tracking" || v.state === "done" || v.state === "ask";
     $("ratingrow").style.display = showRating ? "" : "none";
     LEVELS.forEach(function (name, lv) {
       var b = document.createElement("button");
@@ -179,7 +182,8 @@
         tracker.setIcons(icons); view.icons = icons;
       } catch (e) { /* letters will do */ }
     }
-    if (view.state === "idle" || view.state === "waiting") status(REASONS[view.reason] || "Waiting…", view.reason === "no-permission" || view.reason === "no-rating");
+    if (view.state === "ask") status("Modules read, rating not readable — click the rating below.", true);
+    else if (view.state === "idle" || view.state === "waiting") status(REASONS[view.reason] || "Waiting…", view.reason === "no-permission" || view.reason === "no-rating");
     else if (view.state === "done") status("Blueprint solved.");
     else status(view.result === "corrected" ? "This order read differently than before — using the new rating." : "Tracking this blueprint (" + view.history.length + " order" + (view.history.length === 1 ? "" : "s") + " seen).");
     render(); drawOverlay();
@@ -195,11 +199,12 @@
       manualArr = view.arr.slice(); picks = [];
       render(); return;
     }
+    if (view.state === "ask") { var sv = tracker.supply(lv); if (sv) { view = sv; overlaySig = ""; render(); drawOverlay(); } return; }
     if (!(view.state === "tracking" || view.state === "done") || view.level === lv) return;
     /* remember what this word looks like so it is read correctly from now on */
     if (view.word && view.word.ratio) {
       var wd = view.word;
-      learned = learned.filter(function (t) { return !(!!t.gap === !!wd.gap && Math.abs(t.ratio - wd.ratio) <= 0.035 && Math.abs(t.hue - wd.hue) <= 18); });
+      learned = learned.filter(function (t) { return !(!!t.gap === !!wd.gap && Math.abs(t.ratio - wd.ratio) <= 0.035 && (t.hue < 0) === (wd.hue < 0) && (t.hue < 0 || Math.abs(t.hue - wd.hue) <= 18)); });
       learned.push({ level: lv, ratio: wd.ratio, gap: !!wd.gap, hue: wd.hue });
       learned = learned.slice(-12);
       store.set("prototyper.learned.v2", JSON.stringify(learned));
@@ -250,7 +255,7 @@
       if (!r.error) {
         lines.push("rating: " + (r.level === undefined ? "unreadable" : LEVELS[r.level] + " (" + r.levelHow + ")") + "   empty slots: " + r.empty + "   blueprint: " + r.title);
         lines.push("capture " + (r.img ? r.img.width + "x" + r.img.height : "?") + "   overlay scale: x" + overlayFactor());
-        lines.push("slot contrast: " + r.fps.map(function (f) { return f.contrast.toFixed(0); }).join(" "));
+        lines.push("slot detail: " + r.fps.map(function (f) { return f.edge.toFixed(1); }).join(" ") + " (empty < 5)");
         if (r.word) { lines.push("rating word: " + r.word.w + "px, width ratio " + r.word.ratio.toFixed(3) + ", hue " + Math.round(r.word.hue) + ", two words " + r.word.gap + ", first-letter ink " + r.word.pg.toFixed(2)); r.word.rows.forEach(function (row) { lines.push(row); }); }
       }
     } else lines.push("no read yet");

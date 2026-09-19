@@ -40,6 +40,6 @@
    },
    "MATCH_MIN": 0.88,
    "DISTINCT_MAX": 0.8,
-   "EMPTY_CONTRAST": 16
+   "EMPTY_EDGE": 5
   };
 });

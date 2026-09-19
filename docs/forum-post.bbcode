@@ -22,16 +22,16 @@ An older thread asked for a tool for this puzzle: [url]https://runeapps.org/foru
 [*]When the rating is Perfect, the app tells you to press Invent.
 [/list]
 
-This image shows the overlay. It is an illustration: the green boxes are drawn on a game screenshot in the same position and colour that the app uses.
+This image shows the overlay in the game.
 
-[img]https://projects.scottcardone.com/prototyper/docs/overlay-mock.png[/img]
+[img]https://projects.scottcardone.com/prototyper/docs/overlay.png[/img]
 
 [b]Other functions[/b]
 
 [list]
 [*]You do not have to follow the advice. The app reads each swap that you make and uses the result.
 [*]The app saves its progress for each blueprint. You can close the window and continue later.
-[*]If the app reads a rating incorrectly, click the correct rating. The app remembers the correction.
+[*]If the app reads a rating incorrectly, click the correct rating. The app remembers the correction. If the app cannot read a rating, it asks you to click it.
 [*]A manual mode works without screen reading, also in a normal browser. You click the rating and the tiles.
 [*]The app does not help with the first step, where you select 5 materials from 10.
 [/list]
@@ -65,7 +65,7 @@ Manual mode also works in a normal browser: [url]https://projects.scottcardone.c
 [*]If the ratings do not agree with the model, the app tells you. It then continues with a simple search that does not visit an order twice.
 [*]The app finds the window by the shape of the module row. The frames of the five slots make a regular pattern of ten lines. The app fits this pattern to get the exact position and the exact scale, and all other measurements use that scale.
 [*]The app does not use an icon library. It makes a brightness fingerprint of the artwork in each slot and follows the modules by their fingerprints.
-[*]The Alt1 fonts do not match the rating text. The app isolates the coloured text and measures the rating word: its width compared to the word "Optimisation:", one word or two words, and the shape of the first letter. These measurements do not depend on the font size.
+[*]The Alt1 fonts do not match the rating text. The game shows some ratings in colour and some in white. The app isolates the bright text and measures the rating word: its width compared to the word "Optimisation:", one word or two words, and the shape of the first letter. These measurements do not depend on the font size.
 [*]A reading counts only after three equal reads in sequence. Thus a module that you are dragging does not cause an incorrect reading.
 [*]The app is a static page. It has no build step and no server.
 [/list]
@@ -74,7 +74,7 @@ Manual mode also works in a normal browser: [url]https://projects.scottcardone.c
 
 [list]
 [*]I tested interface scales other than 100% on resized copies of a real capture, not in the game. If the app does not find the window at your scale, send me a capture.
-[*]I have seen only three of the six ratings on the screen. The app identifies the other three from estimated widths. One click corrects an incorrect reading, and the app remembers it.
+[*]I have seen five of the six ratings on the screen. The app identifies the last one (Good) from an estimated width and the first letter. One click corrects an incorrect reading, and the app remembers it.
 [*]If the green boxes are in the wrong position, change "overlay scale" at the bottom of the app.
 [*]The full Discovery window must be on the screen.
 [*]A game update that moves the interface will stop the screen reading until I make new templates. Manual mode continues to work.
