@@ -52,7 +52,7 @@ By starting rating, Prototyper averages 5.4 swaps from Excellent, 6.2 from Very 
 **The reader** (`src/reader.js`) needs no icon library:
 
 - finds the window two ways. At native size, pixel templates of the module strip's two ends (Alt1 searches those natively, in a millisecond). At any other interface scale — or if the templates ever stop matching — a whole-capture search every few idle reads: parchment-coloured rectangles with the strip's proportions are candidates. Either way the ten thin frame lines of the five slots (a very regular pattern: 0, 49, 70, 119 … 329 px) are then fitted, which gives the exact position *and* the exact scale. All other geometry is relative to that and multiplied by the scale. Once found, the window is followed from its last position;
-- fingerprints the artwork in each slot (14 × 14 normalised brightness grid; a slot counts as empty when it has no fine detail, which keeps faint outline modules from being mistaken for bare parchment). The same module matches itself at ≥ 0.99 in any slot; different modules score ≤ 0.65. Modules are simply "whatever was in slots 1–5 when this blueprint was first seen";
+- fingerprints the artwork in each slot (14 × 14 normalised brightness grid; a slot counts as empty when it has no fine detail, which keeps faint outline modules from being mistaken for bare parchment). The same module matches itself at ≥ 0.99 in any slot; different modules usually score ≤ 0.65, but look-alikes exist (a washer and a hex nut score about 0.87), so a slot is matched to the stored module it fits best, provided that fit is ≥ 0.93 and beats the runner-up by ≥ 0.03. Modules are simply "whatever was in slots 1–5 when this blueprint was first seen";
 - isolates the bright rating text from its dark panel (the line is coloured for some ratings and plain white for others) and classifies the word after `Optimisation:` without any font: its width relative to `Optimisation:` ("Poor!" 0.35, Perfect 0.52, Excellent 0.63, Very Good 0.74, Satisfactory 0.90 measured; Good ≈ 0.35 estimated), whether it is two words (only Very Good), and for the two short ones the colour ("Poor!" is red) and whether the first letter has ink in its bottom-right corner (G yes, P no). Rating colours seen so far: Perfect green, Excellent white, Very Good yellow, Satisfactory orange, Poor red; colour is stored with user corrections. These features don't depend on font size;
 - hashes the blueprint title/description box so each blueprint gets its own saved session.
 
@@ -70,7 +70,7 @@ src/app.js        UI, polling loop, overlay
 tools/make-anchor.js   cuts src/anchor.js out of the screenshots in test/
 tools/simulate.js      plays every puzzle, prints the table above
 tools/serve.js, serve.cmd   local static server
-test/run.js       67 headless checks (npm test), incl. the capture resized to x0.9 / x1.25 / x1.5 / x2
+test/run.js       70 headless checks (npm test), incl. the capture resized to x0.9 / x1.25 / x1.5 / x2
 test/ui.js        full-app browser test with a fake Alt1 (needs playwright)
 vendor/a1lib.js   Alt1 library (capture, image search, overlay colours)
 ```

@@ -262,17 +262,21 @@
   }
   function similarity(a, b) { var s = 0; for (var i = 0; i < a.length; i++) s += a[i] * b[i]; return s; }
 
-  /* which stored module sits in each slot -> arrangement, or null if not a clean permutation */
+  /* which stored module sits in each slot -> arrangement, or null if not a clean permutation.
+     The same artwork matches itself at ~1.00; two different modules can still look alike at this
+     resolution (a washer and a hex nut score ~0.87), so what counts is a high best match that
+     clearly beats the runner-up, not a fixed gap between "same" and "different". */
   function matchSlots(fps, refs) {
     var arr = [], used = {}, worst = 1;
     for (var s = 0; s < 5; s++) {
-      var bi = -1, bs = -2;
-      for (var m = 0; m < 5; m++) { var v = similarity(fps[s], refs[m]); if (v > bs) { bs = v; bi = m; } }
-      if (used[bi] || bs < G.MATCH_MIN) return null;
+      var bi = -1, bs = -2, second = -2;
+      for (var m = 0; m < 5; m++) { var v = similarity(fps[s], refs[m]); if (v > bs) { second = bs; bs = v; bi = m; } else if (v > second) second = v; }
+      if (used[bi] || bs < G.MATCH_MIN || bs - second < G.MATCH_MARGIN) return null;
       used[bi] = 1; arr.push(bi); if (bs < worst) worst = bs;
     }
     return { arr: arr, worst: worst };
   }
+  /* can these five be told apart?  only near-identical artwork (or the same module twice) says no */
   function distinct(fps) {
     var mx = -1;
     for (var i = 0; i < 5; i++) for (var j = i + 1; j < 5; j++) mx = Math.max(mx, similarity(fps[i], fps[j]));

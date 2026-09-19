@@ -38,8 +38,9 @@
     "w": 275,
     "h": 82
    },
-   "MATCH_MIN": 0.88,
-   "DISTINCT_MAX": 0.8,
+   "MATCH_MIN": 0.93,
+   "MATCH_MARGIN": 0.03,
+   "DISTINCT_MAX": 0.95,
    "EMPTY_EDGE": 5
   };
 });

@@ -118,6 +118,22 @@ if (!A.error) [0.9, 1.25, 1.5, 2].forEach(function (f) {
   ok("interface scale x" + f + ": a swap of slots 2 and 5 is tracked, same blueprint hash", m2 && m2.arr.join("") === "04231" && R2.title === R1.title && R2.origin.via === "tracking", R2.error || JSON.stringify(m2));
 });
 ok("without the deep flag an enlarged window is not searched for (cheap idle reads)", Reader.readRef(toRef(resize(cap, 1.5)), [], null, false).error === "no-window");
+(function () { /* two modules that look alike (live: a washer and a hex nut, similarity ~0.87) */
+  var twin = clone(cap), S = G.SLOT_SIZE, x, y, c;
+  for (y = 3; y < S - 3; y++) for (x = 3; x < S - 3; x++) for (c = 0; c < 3; c++)          /* slot 2 := copy of slot 1's artwork ... */
+    twin.data[((625 + y) * cap.width + 964 + 70 + x) * 4 + c] = cap.data[((625 + y) * cap.width + 964 + x) * 4 + c];
+  [[10, 8], [34, 8], [8, 22], [38, 22], [10, 36], [34, 36]].forEach(function (q) {           /* ... with six dark corners added */
+    for (y = 0; y < 7; y++) for (x = 0; x < 7; x++) for (c = 0; c < 3; c++) twin.data[((625 + q[1] + y) * cap.width + 964 + 70 + q[0] + x) * 4 + c] = 70;
+  });
+  var T1 = Reader.readRef(toRef(twin), []), sim = T1.error ? 0 : Reader.similarity(T1.fps[0], T1.fps[1]);
+  ok("look-alike modules (similarity " + sim.toFixed(2) + ") still count as five distinct modules", !T1.error && sim > 0.82 && sim < 0.95 && Reader.distinct(T1.fps), T1.error || sim);
+  var T2 = Reader.readRef(toRef(swapSlots(twin, { x: 964, y: 625 }, 0, 1)), [], T1.origin), mt = !T2.error && Reader.matchSlots(T2.fps, T1.fps);
+  ok("swapping the two look-alikes is tracked correctly", mt && mt.arr.join("") === "10234", JSON.stringify(mt));
+  var same = clone(cap);
+  for (y = 1; y < S - 1; y++) for (x = 1; x < S - 1; x++) for (c = 0; c < 3; c++) same.data[((625 + y) * cap.width + 964 + 70 + x) * 4 + c] = cap.data[((625 + y) * cap.width + 964 + x) * 4 + c];
+  var T3r = Reader.readRef(toRef(same), []);
+  ok("the very same module twice is still refused (cannot be tracked)", !T3r.error && !Reader.distinct(T3r.fps));
+})();
 (function () { /* "Excellent" is drawn in plain white, not in a colour (real capture; a faint light-bulb module too) */
   var ex = loadPng(path.join(__dirname, "capture-excellent.png")), E = Reader.readRef(toRef(ex), [], null, false);
   ok("white rating text: Excellent read (width ratio " + (E.word ? E.word.ratio.toFixed(3) : "-") + ", no hue)", !E.error && E.level === 1 && E.word.hue === -1, E.error || JSON.stringify(E.word && { r: E.word.ratio, hue: E.word.hue }));

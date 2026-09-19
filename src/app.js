@@ -4,7 +4,7 @@
   "use strict";
   var $ = function (id) { return document.getElementById(id); };
   var LEVELS = Solver.LEVELS, LETTERS = ["A", "B", "C", "D", "E"];
-  var VERSION = "1.3.0";
+  var VERSION = "1.3.1";
   var POLL_MS = 300, OVERLAY_GROUP = "prototyper", OVERLAY_MS = 6000;
 
   var store = {
