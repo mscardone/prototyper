@@ -1,0 +1,90 @@
+Suggested thread title (the forum allows 70 characters): Prototyper - solves the Invention discovery puzzle in ~7 swaps (RS3)
+
+[b]Prototyper[/b] is a free Alt1 app for RuneScape 3.
+
+The app answers one question: which two modules do I swap now to get a Perfect discovery?
+
+[img]https://projects.scottcardone.com/prototyper/docs/screenshot.png[/img]
+
+[b]The problem[/b]
+
+When you discover a blueprint at an Inventor's workbench, you put five modules in order. The game shows only a rating: Poor, Satisfactory, Good, Very Good, Excellent, or Perfect. A Perfect order gives the most experience. The usual method is to try each pair of modules and keep the swap if the rating gets better. That method needs 26 swaps on average.
+
+An older thread asked for a tool for this puzzle: [url]https://runeapps.org/forums/viewtopic.php?id=387[/url]. The answer then was that only a brute-force pattern was known. Prototyper uses each rating as information, so it does not need the brute-force pattern.
+
+[b]What the app does[/b]
+
+[list]
+[*]The app finds the Discovery window on the screen.
+[*]It reads the five modules and the Optimisation rating.
+[*]It shows which two modules to swap. It shows them in the app window and as two green boxes on top of the game.
+[*]Drag one boxed module onto the other. Wait one second. The app reads the new rating and shows the next swap.
+[*]When the rating is Perfect, the app tells you to press Invent.
+[/list]
+
+This image shows the overlay. It is an illustration: the green boxes are drawn on a game screenshot in the same position and colour that the app uses.
+
+[img]https://projects.scottcardone.com/prototyper/docs/overlay-mock.png[/img]
+
+[b]Other functions[/b]
+
+[list]
+[*]You do not have to follow the advice. The app reads each swap that you make and uses the result.
+[*]The app saves its progress for each blueprint. You can close the window and continue later.
+[*]If the app reads a rating incorrectly, click the correct rating. The app remembers the correction.
+[*]A manual mode works without screen reading, also in a normal browser. You click the rating and the tiles.
+[*]The app does not help with the first step, where you select 5 materials from 10.
+[/list]
+
+[b]Results[/b]
+
+I played the solver against every possible puzzle. There are 7,200.
+
+[list]
+[*]Prototyper: 7.0 swaps on average. The worst case is 13 swaps.
+[*]Try each pair and keep improvements: 26.3 swaps on average. The worst case is 67 swaps.
+[*]From an Excellent start: 5.4 swaps. From a Poor start: 7.4 swaps.
+[/list]
+
+A deeper search improves the average by only 0.05 swaps. I think the result is near the limit of the puzzle.
+
+[b]Install[/b]
+
+Paste this link into the Alt1 browser address bar:
+[code]alt1://addapp/https://projects.scottcardone.com/prototyper/appconfig.json[/code]
+The app needs the pixel permission and the overlay permission. It works with Windows display scaling (125%, 150%) and with the interface scaling setting of the game.
+Manual mode also works in a normal browser: [url]https://projects.scottcardone.com/prototyper/[/url]
+
+[b]How the app works[/b]
+
+[list]
+[*]The RuneScape Wiki gives the scoring rule. Each slot has a hidden rank from 1 to 5. Each module has a hidden rank from 1 to 5. The score is the sum of the rank differences. The rating is a bucket of that score.
+[*]The slot ranks are not in order from left to right. My own screenshots show this. Thus there are 120 x 120 hidden states. A mirror symmetry decreases this to 7,200.
+[*]Each rating that you see removes the hidden states that do not agree with it.
+[*]For each of the 120 orders, the app estimates the cost to look at that order: the swaps to get there, plus the expected distance to the solution, plus a penalty for the uncertainty that stays. It moves toward the best order. When 300 or fewer states stay, the app plays out each of the 10 possible swaps to the end and takes the best one.
+[*]If the ratings do not agree with the model, the app tells you. It then continues with a simple search that does not visit an order twice.
+[*]The app finds the window by the shape of the module row. The frames of the five slots make a regular pattern of ten lines. The app fits this pattern to get the exact position and the exact scale, and all other measurements use that scale.
+[*]The app does not use an icon library. It makes a brightness fingerprint of the artwork in each slot and follows the modules by their fingerprints.
+[*]The Alt1 fonts do not match the rating text. The app isolates the coloured text and measures the rating word: its width compared to the word "Optimisation:", one word or two words, and the shape of the first letter. These measurements do not depend on the font size.
+[*]With Windows display scaling, Alt1 gets the game at its native size in a larger buffer with a black band. The app measures the band and moves the overlay by the same factor.
+[*]A reading counts only after three equal reads in sequence. Thus a module that you are dragging does not cause an incorrect reading.
+[*]The app is a static page. It has no build step and no server.
+[/list]
+
+[b]Known limits[/b]
+
+[list]
+[*]I tested interface scales other than 100% on resized copies of a real capture, not in the game. If the app does not find the window at your scale, send me a capture.
+[*]I have seen only three of the six ratings on the screen. The app identifies the other three from estimated widths. One click corrects an incorrect reading, and the app remembers it.
+[*]If the green boxes are in the wrong position, set "overlay scale" at the bottom of the app to your Windows scale.
+[*]The full Discovery window must be on the screen.
+[*]A game update that moves the interface will stop the screen reading until I make new templates. Manual mode continues to work.
+[/list]
+
+[b]Source and credits[/b]
+
+The source is public: [url]https://github.com/mscardone/prototyper[/url]
+Puzzle rules: the RuneScape Wiki (CC BY-NC-SA). Thanks to Skillbert for Alt1.
+This is a fan project. It is not affiliated with Jagex.
+
+Report problems in this thread. Open "reader debug" in the app, download the capture, and attach it. Tell me which rating the game showed.

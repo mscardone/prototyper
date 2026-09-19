@@ -51,7 +51,8 @@ summary{color:var(--dim);font-size:11px;cursor:pointer;outline:none}
 #history .lv0{color:var(--good)} #history .lv1,#history .lv2{color:var(--gold)} #history .lv5{color:var(--warn)}
 
 footer{margin-top:8px}
-.btns{display:flex;gap:6px}
+.btns{display:flex;gap:6px;align-items:center;flex-wrap:wrap}
+select{background:#141310;border:1px solid var(--line);color:var(--text);border-radius:3px;padding:2px 4px;font:inherit;font-size:11px}
 .dbgrow{margin-top:6px;font-size:10px}
 .dbgrow a{color:var(--dim)}
 #dbgout{font:9px/1.15 Consolas,monospace;color:var(--dim);white-space:pre;overflow:auto;max-height:260px;

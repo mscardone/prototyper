@@ -18,7 +18,7 @@ alt1://addapp/https://projects.scottcardone.com/prototyper/appconfig.json
 
 Give it the **pixel** (screen reading) and **overlay** permissions when Alt1 asks. For local development run `serve.cmd` and use `alt1://addapp/http://localhost:8231/appconfig.json` instead.
 
-Requirements: interface scale at **100%**, and the whole Discovery window visible. No build step — it's plain HTML/JS.
+Requirements: the whole Discovery window visible, nothing else. It works at any **Windows display scaling** (Alt1 sees the game at its native size either way; the overlay is scaled to the screen automatically — footer → *overlay scale* to override) and at any **in-game interface scaling** (the window is found by its shape and everything is measured from the size it is found at). No build step — it's plain HTML/JS.
 
 ## Using it
 
@@ -28,7 +28,7 @@ Requirements: interface scale at **100%**, and the whole Discovery window visibl
 
 You don't have to obey it. Any swap you make is read off the screen and used as information, so you can ignore a suggestion, and progress is remembered per blueprint — close the window or Alt1 halfway and it picks up where you left off.
 
-If the **rating is read wrong**, click the right one in the row of rating buttons. The app remembers what that word looks like and reads it correctly from then on. (Out of the box it has pixel templates for *Very Good* and *Perfect*; the other four are recognised by word shape until a screenshot of each is added — see *Recalibrating*.)
+If the **rating is read wrong**, click the right one in the row of rating buttons. The app remembers what that rating looks like (its width and colour) and reads it correctly from then on.
 
 **Manual mode** (button top right, and the only mode outside Alt1): call the modules A–E, click the rating the game shows, click two tiles to mirror each swap you make, click the new rating.
 
@@ -45,15 +45,15 @@ By starting rating, Prototyper averages 5.4 swaps from Excellent, 6.2 from Very 
 
 ## How it works
 
-**The puzzle** (per the [RuneScape wiki](https://runescape.wiki/w/Discovery)): each slot has a hidden rank 1–5 and each module has a hidden rank 1–5. An order scores the sum over slots of |slot rank − module rank|, shown only as a bucket: 0 Perfect, 2 Excellent, 4 Very good, 6 Good, 8 Satisfactory, 10–12 Poor. Slot ranks are *not* left-to-right (the two reference screenshots in `test/` confirm that), so there are 120 × 120 hidden states, 7,200 after removing the mirror image that scores identically. The solution is fixed per player per blueprint.
+**The puzzle** (per the [RuneScape wiki](https://runescape.wiki/w/Discovery)): each slot has a hidden rank 1–5 and each module has a hidden rank 1–5. An order scores the sum over slots of |slot rank − module rank|, shown only as a bucket: 0 Perfect, 2 Excellent, 4 Very good, 6 Good, 8 Satisfactory, 10–12 Poor. Slot ranks are *not* left-to-right (two screenshots of one blueprint, Very Good then Perfect, confirm that), so there are 120 × 120 hidden states, 7,200 after removing the mirror image that scores identically. The solution is fixed per player per blueprint.
 
 **The solver** (`src/solver.js`) keeps the set of hidden states consistent with every (order, rating) seen. For each of the 120 orders it could go and look at, it estimates `swaps to get there + expected [swap distance to the solution + 0.75 × entropy of the remaining solutions]` after seeing that order's rating, and steps toward the best one through the most informative intermediate order. With 300 or fewer states left it instead scores each of the 10 swaps by playing that policy out to the end. If the game ever contradicts the model (no state fits), it says so and falls back to a never-revisit hill climb, so it still finishes.
 
 **The reader** (`src/reader.js`) needs no icon library:
 
-- finds the window by pixel-matching the two ends of the module strip;
-- fingerprints the artwork in each slot (18 × 18 normalised brightness grid). The same module matches itself at ≥ 0.99 in any slot; different modules score ≤ 0.47. Modules are simply "whatever was in slots 1–5 when this blueprint was first seen";
-- isolates the coloured rating text by saturation (yellow, green, whatever colour the rating uses), template-matches the fixed `Optimisation:` prefix to find the line, then classifies the word after it: learned words → built-in templates → shape rules (two words = Very good, starts with G = Good, starts with P = Poor/Perfect by width, otherwise Excellent/Satisfactory by width);
+- finds the window two ways. At native size, pixel templates of the module strip's two ends (Alt1 searches those natively, in a millisecond). At any other interface scale — or if the templates ever stop matching — a whole-capture search every few idle reads: parchment-coloured rectangles with the strip's proportions are candidates. Either way the ten thin frame lines of the five slots (a very regular pattern: 0, 49, 70, 119 … 329 px) are then fitted, which gives the exact position *and* the exact scale. All other geometry is relative to that and multiplied by the scale. Once found, the window is followed from its last position;
+- fingerprints the artwork in each slot (14 × 14 normalised brightness grid). The same module matches itself at ≥ 0.99 in any slot; different modules score ≤ 0.65. Modules are simply "whatever was in slots 1–5 when this blueprint was first seen";
+- isolates the coloured rating text by saturation and classifies the word after `Optimisation:` without any font: its width relative to `Optimisation:` (Perfect 0.52, Very Good 0.74, Satisfactory 0.90 measured; Poor/Good ≈ 0.33, Excellent ≈ 0.62 estimated), whether it is two words (only Very Good), and for the two short ones whether the first letter has ink in its lower right (G yes, P no). The game also colours ratings (Perfect green, Very Good yellow, Satisfactory orange); colour is stored with user corrections. These features don't depend on font size;
 - hashes the blueprint title/description box so each blueprint gets its own saved session.
 
 **The tracker** (`src/tracker.js`) only accepts a reading once the same order + rating has been seen on three consecutive reads (~1 s), so half-finished drags and a rating that updates a moment after the modules never reach the solver. If a known order later shows a different rating, the newer reading wins and the history is corrected.
@@ -70,22 +70,23 @@ src/app.js        UI, polling loop, overlay
 tools/make-anchor.js   cuts src/anchor.js out of the screenshots in test/
 tools/simulate.js      plays every puzzle, prints the table above
 tools/serve.js, serve.cmd   local static server
-test/run.js       39 headless checks (npm test)
+test/run.js       54 headless checks (npm test), incl. the capture resized to x0.9 / x1.25 / x1.5 / x2
 test/ui.js        full-app browser test with a fake Alt1 (needs playwright)
 vendor/a1lib.js   Alt1 library (capture, image search, overlay colours)
 ```
 
 ## Recalibrating
 
-Everything pixel-specific lives in `src/anchor.js`, generated from lossless screenshots of the Discovery window at 100% scale:
+Everything pixel-specific lives in `src/anchor.js`, generated from **an Alt1 capture** (`test/capture-satisfactory.png`), not a Windows screenshot. That distinction matters: with Windows display scaling at 125%, a screenshot shows the game enlarged 1.25×, while Alt1 receives the game at its native size inside a larger black-padded buffer. Templates cut from a screenshot never match what Alt1 sees (this is exactly what broke v1.0).
 
-- **Teach it another rating word properly:** take a screenshot (or use *reader debug → Download this capture* in the app) while the game shows Excellent / Good / Satisfactory / Poor, save it into `test/`, add it to `EXTRA` in `tools/make-anchor.js`, run `node tools/make-anchor.js --write`, then `npm test`.
-- **Jagex moves the interface around:** replace `test/shot-verygood.png`, update `REF.origin` (top-left pixel of the module strip) and the `GEO` numbers at the top of `tools/make-anchor.js`, regenerate.
-- `npm test path/to/capture.png` prints what the reader sees in any capture.
+- **Get a capture:** in the app, *reader debug → Download this capture*.
+- **Jagex moves the interface around:** replace the capture in `test/` (taken at 100% interface scaling), update `REF.origin` (top-left pixel of the module strip's dark border) and the `GEO` numbers at the top of `tools/make-anchor.js`, run `node tools/make-anchor.js --write`, then `npm test`.
+- `npm test path/to/capture.png` prints what the reader sees in any capture, including the measured overlay scale.
 
 ## Limits
 
-- 100% interface scale only; the templates are pixel-exact.
+- Interface scales other than 100% have been tested on resized copies of a real capture (x0.9 to x2), not yet on the game's own scaler; if yours isn't found, send a capture from *reader debug*.
+- Changing the interface scale mid-puzzle starts that blueprint's puzzle over (the saved session is tied to how the title looks).
 - Only the ordering step is covered, not the "pick 5 of 10 materials" step before it.
-- The rating words other than Very Good and Perfect have not been seen in a real capture yet — they're recognised by shape and can be corrected with one click.
-- The overlay calls follow Alt1's documented API but have only been exercised against a fake Alt1 so far; the first real run is the real test.
+- Only Satisfactory (real capture), Very Good and Perfect (screenshots) have been seen; Excellent, Good and Poor are recognised from estimated widths and can be corrected with one click.
+- The overlay calls follow Alt1's documented API but have only been exercised against a fake Alt1; with Windows display scaling the overlay position relies on the measured scale factor. If the boxes are off, set *overlay scale* by hand.

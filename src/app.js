@@ -11,9 +11,9 @@
     set: function (k, v) { try { localStorage.setItem(k, v); } catch (e) { /* private window etc. */ } }
   };
   var tracker = Tracker.create(store);
-  var learned = []; try { learned = JSON.parse(store.get("prototyper.learned.v1") || "[]") || []; } catch (e) { learned = []; }
+  var learned = []; try { learned = JSON.parse(store.get("prototyper.learned.v2") || "[]") || []; } catch (e) { learned = []; }
   var manual = false, picks = [], manualArr = null, view = { state: "idle" }, hint = null, lastRead = null;
-  var overlaySig = "", overlayAt = 0;
+  var overlaySig = "", overlayAt = 0, autoScale = 1, scaleAge = 999, idleReads = 0;
 
   /* ---------- rendering ---------- */
   function status(msg, warn) { var el = $("status"); el.textContent = msg; el.className = warn ? "warn" : ""; }
@@ -84,9 +84,9 @@
     var hintEl = $("ratinghint");
     if (!showRating) hintEl.innerHTML = "&nbsp;";
     else if (manual) hintEl.textContent = swapped ? "" : "Click two tiles to swap them, then the rating you get. Clicking a rating without swapping corrects the current one.";
-    else if (v.levelHow === "shape") hintEl.textContent = "Rating recognised by word shape — if it's wrong, click the right one and it will be remembered.";
+    else if (v.levelHow === "shape") hintEl.textContent = "Read from the screen. Wrong? Click the right one and it will be remembered.";
     else if (v.levelHow === "you" || v.levelHow === "learned") hintEl.textContent = "Rating as you taught it.";
-    else hintEl.textContent = "Read from the screen. Wrong? Click the right one.";
+    else hintEl.textContent = "";
 
     var ban = $("banner");
     if (v.contradiction) {
@@ -107,6 +107,8 @@
   function diffSlots(a, b) { var out = []; for (var i = 0; i < 5; i++) if (a[i] !== b[i]) out.push(i + 1); return out; }
 
   /* ---------- overlay on the game ---------- */
+  /* capture pixels -> screen pixels (Windows display scaling); "auto" measures the black band in the capture */
+  function overlayFactor() { var c = $("ovscale").value; return c === "auto" ? autoScale : +c; }
   function overlayOk() { return window.alt1 && alt1.permissionOverlay && $("overlay").checked; }
   function clearOverlay() {
     if (!window.alt1 || !alt1.permissionOverlay || !overlaySig) return;
@@ -116,7 +118,9 @@
   function drawOverlay() {
     var v = view;
     if (!overlayOk() || manual || !v.slots || !(v.state === "tracking" || v.state === "done") || v.pending) { clearOverlay(); return; }
-    var sig = v.state + "|" + (v.rec && v.rec.swap ? v.rec.swap.join("-") : "") + "|" + v.slots[0].x + "," + v.slots[0].y;
+    var k = overlayFactor();
+    var sig = v.state + "|" + (v.rec && v.rec.swap ? v.rec.swap.join("-") : "") + "|" + v.slots[0].x + "," + v.slots[0].y + "|" + k;
+    var S = v.slots.map(function (q) { return { x: Math.round(q.x * k), y: Math.round(q.y * k), w: Math.round(q.w * k), h: Math.round(q.h * k) }; });
     var now = Date.now();
     if (sig === overlaySig && now - overlayAt < OVERLAY_MS - 1500) return;
     try {
@@ -124,11 +128,11 @@
       if (alt1.overLayFreezeGroup) alt1.overLayFreezeGroup(OVERLAY_GROUP);
       alt1.overLayClearGroup(OVERLAY_GROUP);
       var green = A1lib.mixColor(60, 230, 110), gold = A1lib.mixColor(255, 200, 60);
-      var mid = v.slots[2].x + v.slots[2].w / 2, top = v.slots[0].y;
+      var mid = S[2].x + S[2].w / 2, top = S[0].y;
       if (v.state === "done") {
         alt1.overLayTextEx("Perfect - press Invent", gold, 16, Math.round(mid), top - 26, OVERLAY_MS, "", true, true);
       } else if (v.rec && v.rec.swap) {
-        var a = v.slots[v.rec.swap[0]], b = v.slots[v.rec.swap[1]];
+        var a = S[v.rec.swap[0]], b = S[v.rec.swap[1]];
         [a, b].forEach(function (s) { alt1.overLayRect(green, s.x - 2, s.y - 2, s.w + 4, s.h + 4, OVERLAY_MS, 3); });
         var ax = Math.round(a.x + a.w / 2), bx = Math.round(b.x + b.w / 2), y = top - 12;
         alt1.overLayLine(green, 3, ax, a.y - 3, ax, y, OVERLAY_MS);
@@ -152,15 +156,19 @@
     "clipped": "The Discovery window is partly off-screen.",
     "moving": "Modules moving…",
     "settling": "Reading…",
-    "no-rating": "Found the module row but can't read the Optimisation rating — is the interface at 100% scale?",
+    "no-rating": "Found the module row but can't read the Optimisation rating — open “reader debug” and send me the capture.",
     "lookalike": "Two modules look identical to me — use manual mode for this one."
   };
   function tick() {
     if (manual) return;
     var r;
-    try { r = Reader.read(learned, hint); } catch (e) { status("Read failed: " + (e && e.message || e), true); return; }
+    /* the whole-capture search (any interface scale) is the expensive path: only every 5th idle read */
+    var deep = !hint && (idleReads++ % 5 === 0);
+    try { r = Reader.read(learned, hint, deep); } catch (e) { status("Read failed: " + (e && e.message || e), true); return; }
     lastRead = r;
-    hint = r.origin ? { x: r.origin.x, y: r.origin.y } : null;
+    hint = r.origin ? { x0: r.origin.x0, y0: r.origin.y0, s: r.origin.s } : null;
+    if (hint) idleReads = 0;
+    if (r.origin && r.img && ++scaleAge > 100) { scaleAge = 0; try { autoScale = Reader.overlayScale(r.img); } catch (e) { autoScale = 1; } }
     view = tracker.feed(r);
     if (view.needIcons && r.img) {
       try {
@@ -187,10 +195,12 @@
     }
     if (!(view.state === "tracking" || view.state === "done") || view.level === lv) return;
     /* remember what this word looks like so it is read correctly from now on */
-    if (view.word && view.word.rows) {
-      learned = learned.filter(function (t) { return t.rows.join("") !== view.word.rows.join(""); });
-      learned.push({ level: lv, rows: view.word.rows });
-      store.set("prototyper.learned.v1", JSON.stringify(learned.slice(-12)));
+    if (view.word && view.word.ratio) {
+      var wd = view.word;
+      learned = learned.filter(function (t) { return !(!!t.gap === !!wd.gap && Math.abs(t.ratio - wd.ratio) <= 0.035 && Math.abs(t.hue - wd.hue) <= 18); });
+      learned.push({ level: lv, ratio: wd.ratio, gap: !!wd.gap, hue: wd.hue });
+      learned = learned.slice(-12);
+      store.set("prototyper.learned.v2", JSON.stringify(learned));
     }
     var nv = tracker.correct(lv);
     if (nv) { view = nv; overlaySig = ""; render(); drawOverlay(); }
@@ -223,6 +233,7 @@
     if (manual) { view = tracker.manualState(); manualArr = view.arr.slice(); } else view = { state: "idle" };
     status("Puzzle forgotten — starting fresh."); render();
   });
+  $("ovscale").addEventListener("change", function () { store.set("prototyper.ovscale", $("ovscale").value); overlaySig = ""; });
   $("overlay").addEventListener("change", function () { store.set("prototyper.overlay", $("overlay").checked ? "1" : "0"); if (!$("overlay").checked) { overlaySig = overlaySig || "x"; clearOverlay(); } else overlaySig = ""; });
 
   $("dbg").addEventListener("click", function (ev) {
@@ -233,11 +244,12 @@
     var lines = [], r = lastRead;
     lines.push("alt1: " + !!window.alt1 + (window.alt1 ? "  pixel: " + !!alt1.permissionPixel + "  overlay: " + !!alt1.permissionOverlay + "  rsLinked: " + !!alt1.rsLinked : ""));
     if (r) {
-      lines.push("read: " + (r.error ? "error " + r.error : "strip at " + r.origin.x + "," + r.origin.y + " via anchor " + r.origin.via));
+      lines.push("read: " + (r.error ? "error " + r.error : "slot frames at " + r.origin.x + "," + r.origin.y + ", interface scale x" + r.origin.s.toFixed(3) + ", found by " + r.origin.via));
       if (!r.error) {
-        lines.push("rating: " + (r.level === undefined ? "unreadable" : LEVELS[r.level] + " (" + r.levelHow + ", " + (r.levelScore || 0).toFixed(2) + ")") + "   empty slots: " + r.empty + "   blueprint: " + r.title);
+        lines.push("rating: " + (r.level === undefined ? "unreadable" : LEVELS[r.level] + " (" + r.levelHow + ")") + "   empty slots: " + r.empty + "   blueprint: " + r.title);
+        lines.push("capture " + (r.img ? r.img.width + "x" + r.img.height : "?") + "   overlay scale: x" + overlayFactor() + " (auto measured x" + autoScale + ")");
         lines.push("slot contrast: " + r.fps.map(function (f) { return f.contrast.toFixed(0); }).join(" "));
-        if (r.word) { lines.push("rating word, " + r.word.w + "px wide:"); r.word.rows.forEach(function (row) { lines.push(row); }); }
+        if (r.word) { lines.push("rating word: " + r.word.w + "px, width ratio " + r.word.ratio.toFixed(3) + ", hue " + Math.round(r.word.hue) + ", two words " + r.word.gap + ", first-letter ink " + r.word.pg.toFixed(2)); r.word.rows.forEach(function (row) { lines.push(row); }); }
       }
     } else lines.push("no read yet");
     lines.push("learned rating words: " + learned.length);
@@ -254,6 +266,7 @@
 
   /* ---------- boot ---------- */
   $("overlay").checked = store.get("prototyper.overlay") !== "0";
+  $("ovscale").value = store.get("prototyper.ovscale") || "auto";
   render();
   if (window.alt1) {
     alt1.identifyAppUrl("./appconfig.json");
@@ -263,7 +276,7 @@
     }, function (e) { status("Couldn't load templates: " + e.message, true); setManual(true); });
     window.addEventListener("beforeunload", function () { overlaySig = overlaySig || "x"; clearOverlay(); });
   } else {
-    $("mode").style.display = "none"; document.querySelector(".toggle").style.display = "none";
+    $("mode").style.display = "none"; Array.prototype.forEach.call(document.querySelectorAll(".toggle"), function (el) { el.style.display = "none"; });
     setManual(true);
     status("Not running inside Alt1 — manual mode. Add it to Alt1 to have the screen read for you.");
   }
