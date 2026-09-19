@@ -1,0 +1,16 @@
+{
+  "name": "prototyper",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Alt1 app: solves the RS3 Invention discovery module-ordering puzzle in as few swaps as possible, reading the screen and highlighting what to drag where.",
+  "scripts": {
+    "test": "node test/run.js",
+    "test:ui": "node test/ui.js",
+    "serve": "node tools/serve.js",
+    "simulate": "node tools/simulate.js",
+    "anchor": "node tools/make-anchor.js"
+  },
+  "devDependencies": {
+    "pngjs": "^7.0.0"
+  }
+}

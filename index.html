@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Prototyper</title>
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<link rel="icon" href="./icon.png">
+<link rel="stylesheet" href="./style.css">
+</head>
+<body>
+<header>
+  <h1>Prototyper</h1>
+  <label class="toggle" title="Draw the swap on top of the game"><input type="checkbox" id="overlay" checked> overlay</label>
+  <button id="mode" title="Switch between reading the screen and entering ratings yourself">Manual</button>
+</header>
+
+<div id="status">starting&hellip;</div>
+
+<div id="tiles" aria-label="Module row"></div>
+<div id="instruction">&nbsp;</div>
+<div id="detail">&nbsp;</div>
+
+<div id="ratingrow">
+  <span id="ratinglabel">Rating</span>
+  <span id="ratingbtns"></span>
+</div>
+<div id="ratinghint">&nbsp;</div>
+
+<div id="banner" class="banner" style="display:none"></div>
+
+<details id="historybox">
+  <summary>Orders tried <span id="historycount"></span></summary>
+  <ol id="history"></ol>
+</details>
+
+<footer>
+  <div class="btns">
+    <button id="reset" title="Forget everything learned about this blueprint's puzzle">Reset this puzzle</button>
+  </div>
+  <div class="dbgrow"><a href="#" id="dbg">reader debug</a></div>
+  <pre id="dbgout" style="display:none"></pre>
+</footer>
+
+<script src="./vendor/a1lib.js"></script>
+<script src="./src/anchor.js"></script>
+<script src="./src/solver.js"></script>
+<script src="./src/reader.js"></script>
+<script src="./src/tracker.js"></script>
+<script src="./src/app.js"></script>
+</body>
+</html>

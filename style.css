@@ -1,0 +1,59 @@
+:root{
+  --bg:#1b1a17; --panel:#232220; --panel2:#2a2926; --line:#3a3833; --text:#e8e2d4; --dim:#9d968a;
+  --gold:#e0b25e; --good:#4ea56a; --warn:#d2603c; --blue:#8fb7ff; --parch:#c9a56a;
+}
+*{box-sizing:border-box}
+html,body{height:100%}
+body{margin:0;padding:8px;background:var(--bg);color:var(--text);
+  font:12px/1.45 "Trebuchet MS",Verdana,sans-serif;-webkit-user-select:none;user-select:none}
+header{display:flex;align-items:center;gap:8px;margin-bottom:6px}
+h1{font-size:13px;margin:0;flex:1;color:var(--gold);letter-spacing:.4px}
+button{background:var(--panel);color:var(--text);border:1px solid var(--line);
+  border-radius:4px;padding:4px 8px;font:inherit;cursor:pointer}
+button:hover{border-color:var(--gold)}
+button.on{background:var(--gold);color:#231f16;border-color:var(--gold);font-weight:bold}
+.toggle{color:var(--dim);font-size:11px;display:flex;align-items:center;gap:3px;cursor:pointer}
+
+#status{color:var(--dim);font-size:11px;min-height:16px;margin-bottom:6px}
+#status.warn{color:var(--warn)}
+
+#tiles{display:flex;gap:5px;justify-content:space-between;margin-bottom:8px}
+.tile{flex:1 1 0;aspect-ratio:1/1;max-width:72px;position:relative;border:2px solid var(--line);border-radius:5px;
+  background:var(--parch);display:flex;align-items:center;justify-content:center;overflow:hidden}
+.tile img{width:100%;height:100%;display:block;image-rendering:auto}
+.tile .letter{font-size:22px;font-weight:bold;color:#3a2a14}
+.tile .num{position:absolute;left:3px;top:1px;font-size:9px;color:#3a2a14;opacity:.8}
+.tile.swap{border-color:var(--good);box-shadow:0 0 0 2px rgba(78,165,106,.35)}
+.tile.pick{border-color:var(--blue)}
+.tile.done{border-color:var(--gold)}
+.tile.dim{opacity:.35}
+body.manual .tile{cursor:pointer}
+
+#instruction{font-size:15px;font-weight:bold;min-height:22px}
+#instruction.done{color:var(--gold)}
+#instruction b{color:var(--good)}
+#detail{color:var(--dim);font-size:11px;min-height:32px;margin-bottom:6px}
+
+#ratingrow{display:flex;align-items:center;gap:6px;flex-wrap:wrap}
+#ratinglabel{color:var(--dim);font-size:11px}
+#ratingbtns{display:flex;gap:3px;flex-wrap:wrap}
+#ratingbtns button{padding:2px 6px;font-size:10px}
+#ratinghint{color:var(--dim);font-size:10px;min-height:14px;margin:2px 0 6px}
+
+.banner{border:1px solid var(--line);border-left:4px solid var(--warn);border-radius:5px;
+  background:var(--panel);padding:5px 8px;margin-bottom:8px;font-size:11px;color:var(--dim)}
+.banner b{color:var(--text)}
+
+details{border-top:1px solid var(--line);padding-top:5px;margin-top:4px}
+summary{color:var(--dim);font-size:11px;cursor:pointer;outline:none}
+#history{margin:4px 0 0;padding-left:22px;color:var(--dim);font-size:11px}
+#history li.cur{color:var(--text)}
+#history .lv0{color:var(--good)} #history .lv1,#history .lv2{color:var(--gold)} #history .lv5{color:var(--warn)}
+
+footer{margin-top:8px}
+.btns{display:flex;gap:6px}
+.dbgrow{margin-top:6px;font-size:10px}
+.dbgrow a{color:var(--dim)}
+#dbgout{font:9px/1.15 Consolas,monospace;color:var(--dim);white-space:pre;overflow:auto;max-height:260px;
+  background:#141310;border:1px solid var(--line);border-radius:4px;padding:5px;-webkit-user-select:text;user-select:text}
+#dbgout a{color:var(--blue)}

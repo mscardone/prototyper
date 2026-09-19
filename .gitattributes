@@ -1,0 +1,6 @@
+# Keep line endings stable no matter which OS commits.
+* text=auto eol=lf
+*.cmd text eol=crlf
+*.png binary
+# Third-party bundles: store and check out byte-for-byte, never normalise.
+vendor/** -text

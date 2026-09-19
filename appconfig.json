@@ -1,0 +1,14 @@
+{
+	"appName": "Prototyper",
+	"description": "Solves the Invention discovery puzzle: reads the module row and its optimisation rating, and highlights which two modules to swap to reach Perfect in the fewest swaps.",
+	"appUrl": "./index.html",
+	"configUrl": "./appconfig.json",
+	"iconUrl": "./icon.png",
+	"defaultWidth": 340,
+	"defaultHeight": 430,
+	"minWidth": 300,
+	"minHeight": 300,
+	"maxWidth": 700,
+	"maxHeight": 1000,
+	"permissions": "pixel,overlay"
+}
