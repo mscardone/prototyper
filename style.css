@@ -55,6 +55,7 @@ footer{margin-top:8px}
 select{background:#141310;border:1px solid var(--line);color:var(--text);border-radius:3px;padding:2px 4px;font:inherit;font-size:11px}
 .dbgrow{margin-top:6px;font-size:10px}
 .dbgrow a{color:var(--dim)}
+#version{color:var(--dim);float:right}
 #dbgout{font:9px/1.15 Consolas,monospace;color:var(--dim);white-space:pre;overflow:auto;max-height:260px;
   background:#141310;border:1px solid var(--line);border-radius:4px;padding:5px;-webkit-user-select:text;user-select:text}
 #dbgout a{color:var(--blue)}

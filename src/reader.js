@@ -347,6 +347,18 @@
     return r;
   }
 
+  /* everything the debug panel wants to know about why a capture was or wasn't read */
+  function diagnose(img) {
+    var d = { size: img.width + "x" + img.height, anchors: anchors ? anchors.length : 0, templateHits: [], candidates: null, located: null, error: null };
+    try {
+      (anchors || []).forEach(function (a, i) { var h = A1lib.ImageDetect.findSubimage(img, a.img); d.templateHits.push("template " + i + ": " + h.length + " hit" + (h.length === 1 ? "" : "s") + (h.length ? " @" + h[0].x + "," + h[0].y : "")); });
+      var full = img.read(0, 0, img.width, img.height), c = findCandidates(full), loc = locate(full);
+      d.candidates = c.length + " strip-shaped areas" + (c.length ? ", widest " + c[0].w + "x" + c[0].h + " @" + c[0].x + "," + c[0].y : "");
+      d.located = loc ? "frames @" + loc.x0.toFixed(1) + "," + loc.y0.toFixed(1) + " scale x" + loc.s.toFixed(3) + " (score " + loc.score.toFixed(0) + ")" : "no frame pattern found";
+    } catch (e) { d.error = String(e && e.message || e); }
+    return d;
+  }
+
   /* Windows display scaling: the game can render at the logical size inside a
      physical-size capture (black band right and bottom).  Things then appear on
      screen bigger than in the capture by this factor - the overlay needs it. */
@@ -378,7 +390,7 @@
 
   var api = {
     _capture: function () { return A1lib.captureHoldFullRs(); }, /* tests swap this out */
-    init: init, read: read, readRef: readRef, readBuffer: readBuffer, box: box, locate: locate, fitFrames: fitFrames, findCandidates: findCandidates,
+    init: init, read: read, diagnose: diagnose, readRef: readRef, readBuffer: readBuffer, box: box, locate: locate, fitFrames: fitFrames, findCandidates: findCandidates,
     satMask: satMask, maskToRows: maskToRows, readRating: readRating, classifyRating: classifyRating, overlayScale: overlayScale,
     fingerprint: fingerprint, similarity: similarity, matchSlots: matchSlots, distinct: distinct,
     titleHash: titleHash, slotImage: slotImage,

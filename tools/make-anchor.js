@@ -22,7 +22,7 @@ var GEO = {
   PARCH_W: 352, PARCH_DX: 10, PARCH_DY: 5,      /* the parchment-coloured area: width, and where L0 sits inside it */
   TEXT: { dx: -65, dy: 125, w: 265, h: 60 },
   TITLE: { dx: 86, dy: -340, w: 275, h: 82 },
-  MATCH_MIN: 0.88, DISTINCT_MAX: 0.8, EMPTY_CONTRAST: 6
+  MATCH_MIN: 0.88, DISTINCT_MAX: 0.8, EMPTY_CONTRAST: 16
 };
 var ANCHOR_BOXES = [{ dx: 0, dy: 0, w: 20, h: 11 }, { dx: 340, dy: 0, w: 20, h: 11 }];
 

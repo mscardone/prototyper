@@ -22,7 +22,7 @@ Requirements: the whole Discovery window visible, nothing else. It works at any 
 
 ## Using it
 
-1. Open a discovery at an Inventor's workbench and get to the module row (pick the five materials as usual — Prototyper only deals with the ordering).
+1. Open a discovery at an Inventor's workbench and drag the five modules from the sheet onto the track, in any order (until then the app just says it has found the window and is waiting). The rating appears once all five are placed.
 2. After about a second the app shows the five modules with two highlighted, and the same two are boxed in the game. Drag one onto the other.
 3. Repeat until it says *Perfect — press Invent*.
 
@@ -70,7 +70,7 @@ src/app.js        UI, polling loop, overlay
 tools/make-anchor.js   cuts src/anchor.js out of the screenshots in test/
 tools/simulate.js      plays every puzzle, prints the table above
 tools/serve.js, serve.cmd   local static server
-test/run.js       54 headless checks (npm test), incl. the capture resized to x0.9 / x1.25 / x1.5 / x2
+test/run.js       56 headless checks (npm test), incl. the capture resized to x0.9 / x1.25 / x1.5 / x2
 test/ui.js        full-app browser test with a fake Alt1 (needs playwright)
 vendor/a1lib.js   Alt1 library (capture, image search, overlay colours)
 ```
@@ -82,6 +82,7 @@ Everything pixel-specific lives in `src/anchor.js`, generated from **an Alt1 cap
 - **Get a capture:** in the app, *reader debug → Download this capture*.
 - **Jagex moves the interface around:** replace the capture in `test/` (taken at 100% interface scaling), update `REF.origin` (top-left pixel of the module strip's dark border) and the `GEO` numbers at the top of `tools/make-anchor.js`, run `node tools/make-anchor.js --write`, then `npm test`.
 - `npm test path/to/capture.png` prints what the reader sees in any capture, including the measured overlay scale.
+- The version is shown bottom-right in the app and at the top of *reader debug*; bump `VERSION` in `src/app.js` and the `?v=` strings in `index.html` together so Alt1's browser cache can't serve stale scripts.
 
 ## Limits
 

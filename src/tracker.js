@@ -85,6 +85,8 @@
     function feed(r) {
       if (r.error) { lastKey = null; stable = 0; return (view = { state: "idle", reason: r.error }); }
       var sess = open(r.title || "untitled");
+      /* the step before the puzzle: modules still on the sheet, track empty, no rating yet */
+      if (r.empty === 5 && r.level === undefined) { lastKey = null; stable = 0; return (view = { state: "waiting", reason: "place", slots: r.slots }); }
       if (r.empty > 0) { lastKey = null; stable = 0; return (view = { state: "waiting", reason: "moving", slots: r.slots }); }
       if (r.level === undefined) { lastKey = null; stable = 0; return (view = { state: "waiting", reason: "no-rating", slots: r.slots }); }
       if (!sess.refs) {

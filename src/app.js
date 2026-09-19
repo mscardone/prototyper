@@ -4,6 +4,7 @@
   "use strict";
   var $ = function (id) { return document.getElementById(id); };
   var LEVELS = Solver.LEVELS, LETTERS = ["A", "B", "C", "D", "E"];
+  var VERSION = "1.2.1";
   var POLL_MS = 300, OVERLAY_GROUP = "prototyper", OVERLAY_MS = 6000;
 
   var store = {
@@ -154,6 +155,7 @@
     "no-rs": "Alt1 can't see the RuneScape window.",
     "no-window": "Open a discovery at an Inventor's workbench — waiting for the module row.",
     "clipped": "The Discovery window is partly off-screen.",
+    "place": "Found the Discovery window. Put all five modules on the track, in any order — I start reading when the rating appears.",
     "moving": "Modules moving…",
     "settling": "Reading…",
     "no-rating": "Found the module row but can't read the Optimisation rating — open “reader debug” and send me the capture.",
@@ -241,7 +243,7 @@
     var out = $("dbgout");
     if (out.style.display !== "none") { out.style.display = "none"; return; }
     out.style.display = ""; out.textContent = "";
-    var lines = [], r = lastRead;
+    var lines = ["Prototyper v" + VERSION], r = lastRead;
     lines.push("alt1: " + !!window.alt1 + (window.alt1 ? "  pixel: " + !!alt1.permissionPixel + "  overlay: " + !!alt1.permissionOverlay + "  rsLinked: " + !!alt1.rsLinked : ""));
     if (r) {
       lines.push("read: " + (r.error ? "error " + r.error : "slot frames at " + r.origin.x + "," + r.origin.y + ", interface scale x" + r.origin.s.toFixed(3) + ", found by " + r.origin.via));
@@ -253,6 +255,13 @@
       }
     } else lines.push("no read yet");
     lines.push("learned rating words: " + learned.length);
+    if (r && r.img) {
+      var dg = Reader.diagnose(r.img);
+      lines.push("--- window search on this capture (" + dg.size + ") ---");
+      lines.push("templates loaded: " + dg.anchors); dg.templateHits.forEach(function (t) { lines.push(t); });
+      lines.push("shape search: " + dg.candidates); lines.push("result: " + dg.located);
+      if (dg.error) lines.push("search error: " + dg.error);
+    }
     out.textContent = lines.join("\n") + "\n";
     if (r && r.img && r.img.toData) {
       try {
@@ -265,6 +274,7 @@
   });
 
   /* ---------- boot ---------- */
+  $("version").textContent = "v" + VERSION;
   $("overlay").checked = store.get("prototyper.overlay") !== "0";
   $("ovscale").value = store.get("prototyper.ovscale") || "auto";
   render();

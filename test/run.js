@@ -118,6 +118,12 @@ if (!A.error) [0.9, 1.25, 1.5, 2].forEach(function (f) {
   ok("interface scale x" + f + ": a swap of slots 2 and 5 is tracked, same blueprint hash", m2 && m2.arr.join("") === "04231" && R2.title === R1.title && R2.origin.via === "tracking", R2.error || JSON.stringify(m2));
 });
 ok("without the deep flag an enlarged window is not searched for (cheap idle reads)", Reader.readRef(toRef(resize(cap, 1.5)), [], null, false).error === "no-window");
+(function () { /* the step before the puzzle: empty track, modules still on the sheet (real capture, cropped to the window) */
+  var pre = loadPng(path.join(__dirname, "capture-place-modules.png")), R0 = Reader.readRef(toRef(pre), [], null, true);
+  ok("empty track: window still found, all five slots empty, no rating", !R0.error && R0.empty === 5 && R0.level === undefined, R0.error || (R0.empty + " empty, level " + R0.level));
+  var T0 = app.Tracker.create({ get: function () { return null; }, set: function () {} });
+  ok("empty track: the app asks for the modules to be placed", !R0.error && T0.feed(R0).reason === "place");
+})();
 ok("a capture without the window -> no-window", Reader.readRef(toRef({ width: 400, height: 300, data: new Uint8ClampedArray(400 * 300 * 4) }), [], null, true).error === "no-window");
 
 /* ---------------- tracker ---------------- */
