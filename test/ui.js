@@ -24,7 +24,7 @@ const { spawn } = require('child_process');const path=require('path'),fs=require
   ok('two tiles highlighted',(await page.$$('#tiles .tile.swap')).length===2);
   let ov=await page.evaluate(()=>window.__ov);ok('overlay: 2 rectangles + 3 lines + label',ov.filter(o=>o[0]==='rect').length===2&&ov.filter(o=>o[0]==='line').length===3&&ov.some(o=>o[0]==='text'&&o[1]==='swap'),JSON.stringify(ov.slice(0,12)));
   const rect=ov.find(o=>o[0]==='rect');const sw=await page.evaluate(()=>Prototyper._view().rec.swap);
-  const expX=Math.round((964+70*sw[0])*1.25)-2,expY=Math.round(625*1.25)-2;ok('overlay is placed in screen pixels: capture x1.25 for 125% Windows scaling ('+rect[2]+','+rect[3]+')',rect[2]===expX&&rect[3]===expY,expX+','+expY);
+  const expX=964+70*sw[0]-2,expY=625-2;ok('overlay is drawn in capture coordinates ('+rect[2]+','+rect[3]+')',rect[2]===expX&&rect[3]===expY,expX+','+expY);
   console.log('     detail: '+(await page.textContent('#detail')));
   await page.screenshot({path:path.join(__dirname,'../docs/ui-tracking.png')});
   await setCapture(sw);await page.waitForTimeout(1800);

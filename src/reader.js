@@ -359,9 +359,9 @@
     return d;
   }
 
-  /* Windows display scaling: the game can render at the logical size inside a
-     physical-size capture (black band right and bottom).  Things then appear on
-     screen bigger than in the capture by this factor - the overlay needs it. */
+  /* Diagnostic only: how much bigger the capture buffer is than the game picture inside it
+     (a black band right and bottom, seen with Windows display scaling).  The overlay does NOT
+     need this factor - Alt1 draws overlays in capture coordinates. */
   function overlayScale(img) {
     function dark(d, i) { return d.data[i] <= 10 && d.data[i + 1] <= 10 && d.data[i + 2] <= 10; }
     var W = img.width, H = img.height, cw = 0, ch = 0, k, i, d;

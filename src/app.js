@@ -4,7 +4,7 @@
   "use strict";
   var $ = function (id) { return document.getElementById(id); };
   var LEVELS = Solver.LEVELS, LETTERS = ["A", "B", "C", "D", "E"];
-  var VERSION = "1.2.1";
+  var VERSION = "1.2.2";
   var POLL_MS = 300, OVERLAY_GROUP = "prototyper", OVERLAY_MS = 6000;
 
   var store = {
@@ -14,7 +14,7 @@
   var tracker = Tracker.create(store);
   var learned = []; try { learned = JSON.parse(store.get("prototyper.learned.v2") || "[]") || []; } catch (e) { learned = []; }
   var manual = false, picks = [], manualArr = null, view = { state: "idle" }, hint = null, lastRead = null;
-  var overlaySig = "", overlayAt = 0, autoScale = 1, scaleAge = 999, idleReads = 0;
+  var overlaySig = "", overlayAt = 0, idleReads = 0;
 
   /* ---------- rendering ---------- */
   function status(msg, warn) { var el = $("status"); el.textContent = msg; el.className = warn ? "warn" : ""; }
@@ -108,8 +108,9 @@
   function diffSlots(a, b) { var out = []; for (var i = 0; i < 5; i++) if (a[i] !== b[i]) out.push(i + 1); return out; }
 
   /* ---------- overlay on the game ---------- */
-  /* capture pixels -> screen pixels (Windows display scaling); "auto" measures the black band in the capture */
-  function overlayFactor() { var c = $("ovscale").value; return c === "auto" ? autoScale : +c; }
+  /* Alt1 draws overlays in the same coordinates as its captures (confirmed live, also with a
+     black-banded capture), so the factor is 1; the select is only an escape hatch for odd setups */
+  function overlayFactor() { return +$("ovscale").value || 1; }
   function overlayOk() { return window.alt1 && alt1.permissionOverlay && $("overlay").checked; }
   function clearOverlay() {
     if (!window.alt1 || !alt1.permissionOverlay || !overlaySig) return;
@@ -170,7 +171,6 @@
     lastRead = r;
     hint = r.origin ? { x0: r.origin.x0, y0: r.origin.y0, s: r.origin.s } : null;
     if (hint) idleReads = 0;
-    if (r.origin && r.img && ++scaleAge > 100) { scaleAge = 0; try { autoScale = Reader.overlayScale(r.img); } catch (e) { autoScale = 1; } }
     view = tracker.feed(r);
     if (view.needIcons && r.img) {
       try {
@@ -249,7 +249,7 @@
       lines.push("read: " + (r.error ? "error " + r.error : "slot frames at " + r.origin.x + "," + r.origin.y + ", interface scale x" + r.origin.s.toFixed(3) + ", found by " + r.origin.via));
       if (!r.error) {
         lines.push("rating: " + (r.level === undefined ? "unreadable" : LEVELS[r.level] + " (" + r.levelHow + ")") + "   empty slots: " + r.empty + "   blueprint: " + r.title);
-        lines.push("capture " + (r.img ? r.img.width + "x" + r.img.height : "?") + "   overlay scale: x" + overlayFactor() + " (auto measured x" + autoScale + ")");
+        lines.push("capture " + (r.img ? r.img.width + "x" + r.img.height : "?") + "   overlay scale: x" + overlayFactor());
         lines.push("slot contrast: " + r.fps.map(function (f) { return f.contrast.toFixed(0); }).join(" "));
         if (r.word) { lines.push("rating word: " + r.word.w + "px, width ratio " + r.word.ratio.toFixed(3) + ", hue " + Math.round(r.word.hue) + ", two words " + r.word.gap + ", first-letter ink " + r.word.pg.toFixed(2)); r.word.rows.forEach(function (row) { lines.push(row); }); }
       }
@@ -276,7 +276,8 @@
   /* ---------- boot ---------- */
   $("version").textContent = "v" + VERSION;
   $("overlay").checked = store.get("prototyper.overlay") !== "0";
-  $("ovscale").value = store.get("prototyper.ovscale") || "auto";
+  var savedScale = store.get("prototyper.ovscale");
+  $("ovscale").value = savedScale && savedScale !== "auto" ? savedScale : "1";
   render();
   if (window.alt1) {
     alt1.identifyAppUrl("./appconfig.json");

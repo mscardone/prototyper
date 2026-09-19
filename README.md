@@ -18,7 +18,7 @@ alt1://addapp/https://projects.scottcardone.com/prototyper/appconfig.json
 
 Give it the **pixel** (screen reading) and **overlay** permissions when Alt1 asks. For local development run `serve.cmd` and use `alt1://addapp/http://localhost:8231/appconfig.json` instead.
 
-Requirements: the whole Discovery window visible, nothing else. It works at any **Windows display scaling** (Alt1 sees the game at its native size either way; the overlay is scaled to the screen automatically — footer → *overlay scale* to override) and at any **in-game interface scaling** (the window is found by its shape and everything is measured from the size it is found at). No build step — it's plain HTML/JS.
+Requirements: the whole Discovery window visible, nothing else. It works at any **Windows display scaling** (Alt1 sees the game at its native size either way, and draws the overlay in the same coordinates it captures in) and at any **in-game interface scaling** (the window is found by its shape and everything is measured from the size it is found at). No build step — it's plain HTML/JS.
 
 ## Using it
 
@@ -77,11 +77,11 @@ vendor/a1lib.js   Alt1 library (capture, image search, overlay colours)
 
 ## Recalibrating
 
-Everything pixel-specific lives in `src/anchor.js`, generated from **an Alt1 capture** (`test/capture-satisfactory.png`), not a Windows screenshot. That distinction matters: with Windows display scaling at 125%, a screenshot shows the game enlarged 1.25×, while Alt1 receives the game at its native size inside a larger black-padded buffer. Templates cut from a screenshot never match what Alt1 sees (this is exactly what broke v1.0).
+Everything pixel-specific lives in `src/anchor.js`, generated from **an Alt1 capture** (`test/capture-satisfactory.png`), not a Windows screenshot. That distinction matters: with Windows display scaling at 125%, a screenshot shows the game enlarged 1.25×, while Alt1 receives the game at its native size (on the test machine inside a larger black-padded buffer; overlays still use the capture's coordinates). Templates cut from a screenshot never match what Alt1 sees (this is exactly what broke v1.0).
 
 - **Get a capture:** in the app, *reader debug → Download this capture*.
 - **Jagex moves the interface around:** replace the capture in `test/` (taken at 100% interface scaling), update `REF.origin` (top-left pixel of the module strip's dark border) and the `GEO` numbers at the top of `tools/make-anchor.js`, run `node tools/make-anchor.js --write`, then `npm test`.
-- `npm test path/to/capture.png` prints what the reader sees in any capture, including the measured overlay scale.
+- `npm test path/to/capture.png` prints what the reader sees in any capture.
 - The version is shown bottom-right in the app and at the top of *reader debug*; bump `VERSION` in `src/app.js` and the `?v=` strings in `index.html` together so Alt1's browser cache can't serve stale scripts.
 
 ## Limits
@@ -90,4 +90,4 @@ Everything pixel-specific lives in `src/anchor.js`, generated from **an Alt1 cap
 - Changing the interface scale mid-puzzle starts that blueprint's puzzle over (the saved session is tied to how the title looks).
 - Only the ordering step is covered, not the "pick 5 of 10 materials" step before it.
 - Only Satisfactory (real capture), Very Good and Perfect (screenshots) have been seen; Excellent, Good and Poor are recognised from estimated widths and can be corrected with one click.
-- The overlay calls follow Alt1's documented API but have only been exercised against a fake Alt1; with Windows display scaling the overlay position relies on the measured scale factor. If the boxes are off, set *overlay scale* by hand.
+- The overlay is drawn in capture coordinates, which is right on the setup it was tested on (including a black-banded capture). If the boxes land in the wrong place on yours, the footer has an *overlay scale* override.

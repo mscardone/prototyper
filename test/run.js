@@ -83,7 +83,7 @@ if (!A.error) {
   ok("five distinct modules present", A.empty === 0 && Reader.distinct(A.fps));
   ok("blueprint hash made", !!A.title, A.title);
   ok("slot rectangles are 50px boxes 70px apart", A.slots[1].x - A.slots[0].x === 70 && A.slots[0].w === 50 && A.slots[0].x === 964 && A.slots[0].y === 625);
-  ok("Windows scaling detected from the black band: overlay x1.25", Reader.overlayScale(capRefA) === 1.25, Reader.overlayScale(capRefA));
+  ok("black band measured: capture buffer is x1.25 the game area (diagnostic only - overlays use capture coordinates)", Reader.overlayScale(capRefA) === 1.25, Reader.overlayScale(capRefA));
   var B = Reader.readRef(toRef(swapSlots(cap, A.origin, 0, 3)), [], A.origin);
   ok("after a swap the window is followed from its last position", !B.error && B.origin.x === 964 && B.origin.via === "tracking", B.error || JSON.stringify(B.origin));
   var m = Reader.matchSlots(B.fps, A.fps);
@@ -204,7 +204,7 @@ if (extra) {
   else {
     console.log("  first slot frame at " + rr.origin.x + "," + rr.origin.y + ", interface scale x" + rr.origin.s.toFixed(3) + " (found by " + rr.origin.via + ")");
     console.log("  level: " + (rr.level === undefined ? "unreadable" : Solver.LEVELS[rr.level] + " via " + rr.levelHow) + (rr.word ? ", word/prefix width " + rr.word.ratio.toFixed(3) + ", hue " + Math.round(rr.word.hue) + ", two words: " + rr.word.gap : ""));
-    console.log("  overlay scale for Windows display scaling: x" + Reader.overlayScale(capRef));
+    console.log("  capture buffer / game area: x" + Reader.overlayScale(capRef));
     if (rr.word) rr.word.rows.forEach(function (row) { console.log("    " + row); });
     console.log("  empty slots: " + rr.empty + ", modules distinct: " + Reader.distinct(rr.fps) + ", blueprint hash " + rr.title);
   }

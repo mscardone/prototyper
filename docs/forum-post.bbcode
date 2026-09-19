@@ -66,7 +66,6 @@ Manual mode also works in a normal browser: [url]https://projects.scottcardone.c
 [*]The app finds the window by the shape of the module row. The frames of the five slots make a regular pattern of ten lines. The app fits this pattern to get the exact position and the exact scale, and all other measurements use that scale.
 [*]The app does not use an icon library. It makes a brightness fingerprint of the artwork in each slot and follows the modules by their fingerprints.
 [*]The Alt1 fonts do not match the rating text. The app isolates the coloured text and measures the rating word: its width compared to the word "Optimisation:", one word or two words, and the shape of the first letter. These measurements do not depend on the font size.
-[*]With Windows display scaling, Alt1 gets the game at its native size in a larger buffer with a black band. The app measures the band and moves the overlay by the same factor.
 [*]A reading counts only after three equal reads in sequence. Thus a module that you are dragging does not cause an incorrect reading.
 [*]The app is a static page. It has no build step and no server.
 [/list]
@@ -76,7 +75,7 @@ Manual mode also works in a normal browser: [url]https://projects.scottcardone.c
 [list]
 [*]I tested interface scales other than 100% on resized copies of a real capture, not in the game. If the app does not find the window at your scale, send me a capture.
 [*]I have seen only three of the six ratings on the screen. The app identifies the other three from estimated widths. One click corrects an incorrect reading, and the app remembers it.
-[*]If the green boxes are in the wrong position, set "overlay scale" at the bottom of the app to your Windows scale.
+[*]If the green boxes are in the wrong position, change "overlay scale" at the bottom of the app.
 [*]The full Discovery window must be on the screen.
 [*]A game update that moves the interface will stop the screen reading until I make new templates. Manual mode continues to work.
 [/list]
